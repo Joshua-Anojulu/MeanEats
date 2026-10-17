@@ -139,7 +139,15 @@ struct DiningHallDetailView: View {
                         if menuFilter.isActive && !showFilters {
                             activeFilterChips
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 12)
+                                .padding(.bottom, appliesListedDataFilters ? 8 : 12)
+
+                            // Dietary and allergen filters can be pre-set from the
+                            // profile, so repeat the reminder wherever results are filtered.
+                            if appliesListedDataFilters {
+                                listedDataReminder(compact: true)
+                                    .padding(.horizontal, 20)
+                                    .padding(.bottom, 12)
+                            }
                         }
 
                         // MARK: Menu Items grouped by station
@@ -625,6 +633,9 @@ struct DiningHallDetailView: View {
 
     private var menuFilterBar: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Point-of-use reminder, visible before any filter is applied
+            listedDataReminder(compact: false)
+
             // Dietary tags
             VStack(alignment: .leading, spacing: 6) {
                 Text("DIETARY")
@@ -796,6 +807,52 @@ struct DiningHallDetailView: View {
         .background(Color.surfaceBase)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 3)
+    }
+
+    // MARK: - Listed-Data Reminder
+
+    /// True when results are narrowed by dietary tags or allergen exclusions,
+    /// the filters people may rely on for food safety.
+    private var appliesListedDataFilters: Bool {
+        !menuFilter.dietaryTags.isEmpty || !menuFilter.allergenExclusions.isEmpty
+    }
+
+    /// Reminder that dietary and allergen filters only reflect what UNT's menus
+    /// list. The full version sits at the top of the filter panel; the compact
+    /// version sits under the active filter chips.
+    private func listedDataReminder(compact: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle.fill")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.statusWarning)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                if compact {
+                    Text("Filtered using listed menu info only. Confirm with dining staff.")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Color.textSecondary)
+                } else {
+                    Text("Confirm with dining staff")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Color.textPrimary)
+                    Text("Filters only check the allergens and diet tags listed on UNT's menus. Recipes can change and cross-contact isn't listed, so ask staff before you eat.")
+                        .font(.footnote)
+                        .foregroundStyle(Color.textSecondary)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
+        }
+        .padding(compact ? 10 : 12)
+        .background(Color.statusWarning.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.statusWarning.opacity(0.3), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Active Filter Chips
